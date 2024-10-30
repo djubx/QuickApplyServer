@@ -21,6 +21,9 @@ app.use((err, req, res, next) => {
     res.status(500).send('Something broke!!!!');
 });
 
+// Add this at the top of the file, after the express initialization
+let lastHtmlResponse = null;
+
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })
@@ -38,13 +41,18 @@ app.post('/fill', (req, res) => {
         console.log(`Processing request from URL: ${url}`);
         console.log(`Request timestamp: ${new Date(timestamp).toISOString()}`);
 
-        // Since the client expects application/json (based on Accept header)
-        // we should send a JSON response instead of plain HTML
-        res.json({
-            html: html,
+        // Store the current response to send in next request
+        const currentResponse = {
+            html: lastHtmlResponse || html, // If lastHtmlResponse is null, use current html
             processed: true,
             timestamp: Date.now()
-        });
+        };
+
+        // Update lastHtmlResponse for the next request
+        lastHtmlResponse = html;
+
+        // Send the previous HTML (or current if it's the first request)
+        res.json(currentResponse);
     } catch (error) {
         console.error('Error processing HTML:', error);
         res.status(500).json({
