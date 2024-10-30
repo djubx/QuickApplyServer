@@ -26,9 +26,31 @@ app.get('/', (req, res) => {
 })
 
 app.post('/fill', (req, res) => {
-    const { html } = req.body;
-    console.log(`Received HTML: ${html}`);
-    res.send(html);
+    try {
+        const { html, url, timestamp } = req.body;
+        if (!html) {
+            return res.status(400).json({
+                error: 'HTML content is required in the request body'
+            });
+        }
+
+        // Log the additional information
+        console.log(`Processing request from URL: ${url}`);
+        console.log(`Request timestamp: ${new Date(timestamp).toISOString()}`);
+
+        // Since the client expects application/json (based on Accept header)
+        // we should send a JSON response instead of plain HTML
+        res.json({
+            html: html,
+            processed: true,
+            timestamp: Date.now()
+        });
+    } catch (error) {
+        console.error('Error processing HTML:', error);
+        res.status(500).json({
+            error: 'Failed to process HTML content'
+        });
+    }
 })
 
 app.get('/text', (req, res) => {

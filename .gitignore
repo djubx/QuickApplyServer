@@ -31,3 +31,6 @@ coverage/
 
 # Vercel configuration
 .vercel
+
+# Package lock file
+package-lock.json
