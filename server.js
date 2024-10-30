@@ -37,9 +37,13 @@ app.post('/fill', (req, res) => {
             });
         }
 
-        // Log the additional information
-        console.log(`Processing request from URL: ${url}`);
-        console.log(`Request timestamp: ${new Date(timestamp).toISOString()}`);
+        // Log all the information
+        console.log('=== New Fill Request ===');
+        console.log(`URL: ${url}`);
+        console.log(`Timestamp: ${new Date(timestamp).toISOString()}`);
+        console.log('Current HTML:', html);
+        console.log('Last HTML Response:', lastHtmlResponse);
+        console.log('=== End Fill Request ===\n');
 
         // Store the current response to send in next request
         const currentResponse = {
