@@ -1,4 +1,6 @@
+require('dotenv').config();
 const express = require('express');
+const azureOpenAI = require('./azureOpenAI');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -29,7 +31,7 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
-app.post('/fill', (req, res) => {
+app.post('/fill', async (req, res) => {
     try {
         const { html, url, timestamp, command } = req.body;
         if (!html) {
@@ -47,23 +49,27 @@ app.post('/fill', (req, res) => {
         console.log('Last HTML Response:', lastHtmlResponse);
         console.log('=== End Fill Request ===\n');
 
+        // Process content using Azure OpenAI
+        const aiResponse = await azureOpenAI.processContent(command, html);
+
         // Store the current response to send in next request
         const currentResponse = {
-            html: lastHtmlResponse || html, // If lastHtmlResponse is null, use current html
+            html: aiResponse,
             processed: true,
             timestamp: Date.now(),
-            command: command // Include the command in the response
+            command: command
         };
 
         // Update lastHtmlResponse for the next request
         lastHtmlResponse = html;
 
-        // Send the previous HTML (or current if it's the first request)
+        // Send the AI-processed response
         res.json(currentResponse);
     } catch (error) {
         console.error('Error processing HTML:', error);
         res.status(500).json({
-            error: 'Failed to process HTML content'
+            error: 'Failed to process HTML content',
+            details: error.message
         });
     }
 })
@@ -73,6 +79,19 @@ app.get('/text', (req, res) => {
     console.log(`Received text: ${text}`);
     res.send('Thank you');
 })
+
+// Add a new endpoint to list available models
+app.get('/models', async (req, res) => {
+    try {
+        const models = await azureOpenAI.getModels();
+        res.json(models);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to fetch models',
+            details: error.message
+        });
+    }
+});
 
 // Handle 404
 app.use((req, res) => {
