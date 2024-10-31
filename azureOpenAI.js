@@ -2,7 +2,10 @@ const { AzureOpenAI } = require("openai");
 
 class AzureOpenAIService {
     constructor() {
-        if (!process.env.AZURE_OPENAI_ENDPOINT || !process.env.AZURE_OPENAI_KEY) {
+        if (!process.env.AZURE_OPENAI_ENDPOINT ||
+            !process.env.AZURE_OPENAI_KEY ||
+            !process.env.AZURE_OPENAI_API_VERSION ||
+            !process.env.AZURE_OPENAI_DEPLOYMENT_ID) {
             throw new Error('Azure OpenAI credentials not found in environment variables');
         }
 
@@ -10,9 +13,11 @@ class AzureOpenAIService {
             this.client = new AzureOpenAI({
                 apiKey: process.env.AZURE_OPENAI_KEY,
                 endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-                apiVersion: "2024-02-15-preview"
+                apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+                deploymentId: process.env.AZURE_OPENAI_DEPLOYMENT_ID
             });
-            this.deploymentId = process.env.AZURE_OPENAI_DEPLOYMENT_ID || 'gpt-4o-mini';
+            this.deploymentId = process.env.AZURE_OPENAI_DEPLOYMENT_ID;
+            console.log('Azure OpenAI Service initialized with deployment:', this.deploymentId);
         } catch (error) {
             console.error('Error initializing Azure OpenAI client:', error);
             throw error;
@@ -21,27 +26,29 @@ class AzureOpenAIService {
 
     async processContent(command, html) {
         try {
+            console.log(`Processing content with deployment: ${this.deploymentId}`);
+
             const messages = [
-                { role: "system", content: "You are a helpful assistant that processes HTML content based on commands." },
+                { role: "system", content: "You are a helpful assistant that processes HTML content and fills all the form elements in HTML based on the command post which you return the entire filled HTML." },
                 { role: "user", content: `Command: ${command}\nHTML: ${html}` }
             ];
 
             const response = await this.client.chat.completions.create({
                 model: this.deploymentId,
-                messages: messages,
-                temperature: 0.7,
-                top_p: 0.95,
-                max_tokens: 800,
-                n: 1
+                messages: messages
             });
 
             if (!response.choices || response.choices.length === 0) {
                 throw new Error('No response received from Azure OpenAI');
             }
 
+            console.log('Azure OpenAI Response:', response.choices[0].message);
             return response.choices[0].message.content;
         } catch (error) {
             console.error('Azure OpenAI Error:', error);
+            if (error.code === 'DeploymentNotFound') {
+                throw new Error(`Deployment '${this.deploymentId}' not found. Please check your Azure OpenAI deployments.`);
+            }
             throw new Error(`Azure OpenAI processing failed: ${error.message}`);
         }
     }
