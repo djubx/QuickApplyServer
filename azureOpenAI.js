@@ -29,8 +29,8 @@ class AzureOpenAIService {
             console.log(`Processing content with deployment: ${this.deploymentId}`);
 
             const messages = [
-                { role: "system", content: "You are a helpful assistant that processes HTML content and fills all the form elements in HTML based on the command post which you return the entire filled HTML." },
-                { role: "user", content: `Fill the possible fields of the HTML using the following summary: ${command}\nHTML: ${html}` }
+                { role: "system", content: "Provide the HTML with all the fields and I will return only HTML with data prefilled using the summary that you will provide. I will fill every part of form even if I have to guess the value." },
+                { role: "user", content: `Fill all the fields of the HTML, including checkboxes and radio buttons using the following summary: ${command}\nHTML: ${html}` }
             ];
 
             const response = await this.client.chat.completions.create({
