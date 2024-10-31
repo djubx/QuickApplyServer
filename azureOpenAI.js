@@ -30,7 +30,7 @@ class AzureOpenAIService {
 
             const messages = [
                 { role: "system", content: "You are a helpful assistant that processes HTML content and fills all the form elements in HTML based on the command post which you return the entire filled HTML." },
-                { role: "user", content: `Command: ${command}\nHTML: ${html}` }
+                { role: "user", content: `Fill the possible fields of the HTML using the following summary: ${command}\nHTML: ${html}` }
             ];
 
             const response = await this.client.chat.completions.create({
