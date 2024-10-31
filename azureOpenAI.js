@@ -24,26 +24,37 @@ class AzureOpenAIService {
         }
     }
 
-    async processContent(command, html) {
+    async processContent(command, htmlString) {
         try {
-            console.log(`Processing content with deployment: ${this.deploymentId}`);
+            console.log(`Processing HTML content with deployment: ${this.deploymentId}`);
+
+            // Ensure the HTML is treated as a string
+            const sanitizedHtml = String(htmlString).trim();
 
             const messages = [
-                { role: "system", content: "Provide the HTML with all the fields and I will return only HTML with data prefilled using the summary that you will provide. I will fill every part of form even if I have to guess the value." },
-                { role: "user", content: `Fill all the fields of the HTML, including checkboxes and radio buttons using the following summary: ${command}\nHTML: ${html}` }
+                { role: "system", content: "Provide the HTML text. I will return the same HTML text with data prefilled using the summary that you will provide. I will try to fill all the data in the given HTML text. (Even if I am required to guess it)" },
+                { role: "user", content: `(Don't add anything on your own) Fill all the fields of the HTML, including checkboxes and radio buttons if there are any in HTML text using the following summary: ${command}\nHTML: ${sanitizedHtml}` }
             ];
+
+            console.log('messages =====> ', messages);
 
             const response = await this.client.chat.completions.create({
                 model: this.deploymentId,
-                messages: messages
+                messages: messages,
+                temperature: 0.3, // Lower temperature for more consistent outputs
+                max_tokens: 4000  // Increased to handle larger HTML forms
+
             });
 
             if (!response.choices || response.choices.length === 0) {
                 throw new Error('No response received from Azure OpenAI');
             }
 
-            console.log('Azure OpenAI Response:', response.choices[0].message);
-            return response.choices[0].message.content;
+            // Extract and return only the HTML string from the response
+            const filledHtml = response.choices[0].message.content.trim();
+            console.log('Processed HTML form successfully =====> response from GPT');
+            console.log(filledHtml);
+            return filledHtml;
         } catch (error) {
             console.error('Azure OpenAI Error:', error);
             if (error.code === 'DeploymentNotFound') {
