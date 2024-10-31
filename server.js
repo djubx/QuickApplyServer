@@ -30,17 +30,18 @@ app.get('/', (req, res) => {
 
 app.post('/fill', (req, res) => {
     try {
-        const { html, url, timestamp } = req.body;
+        const { html, url, timestamp, command } = req.body;
         if (!html) {
             return res.status(400).json({
                 error: 'HTML content is required in the request body'
             });
         }
 
-        // Log all the information
+        // Log all the information including the command
         console.log('=== New Fill Request ===');
         console.log(`URL: ${url}`);
         console.log(`Timestamp: ${new Date(timestamp).toISOString()}`);
+        console.log(`Command: ${command || 'No command provided'}`);
         console.log('Current HTML:', html);
         console.log('Last HTML Response:', lastHtmlResponse);
         console.log('=== End Fill Request ===\n');
@@ -49,7 +50,8 @@ app.post('/fill', (req, res) => {
         const currentResponse = {
             html: lastHtmlResponse || html, // If lastHtmlResponse is null, use current html
             processed: true,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            command: command // Include the command in the response
         };
 
         // Update lastHtmlResponse for the next request
